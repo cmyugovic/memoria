@@ -93,9 +93,23 @@ int main()
 
     //read distance from depot to nodes with an empty truck
     getline(infile, line);
-    vector<int> distance=split(line,' ');
-    printVector(types);
+    vector<int> emptyDistance=split(line,' ');
 
+    vector<vector<vector<int>>> distances;
+     for(int type=0; type<5; type++){
+        for(int node=0; node<nNodes; node++){
+            getline(infile, line);
+            distances[type][node]=split(line,' ');
+        }
+    }
+
+    vector<vector<vector<int>>> risks;
+     for(int type=0; type<5; type++){
+        for(int node=0; node<nNodes; node++){
+            getline(infile, line);
+            risks[type][node]=split(line,' ');
+        }
+    }
 
 
     return 0;
