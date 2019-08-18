@@ -54,6 +54,12 @@
         "__split_buffer": "cpp",
         "sstream": "cpp",
         "__functional_base_03": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "__node_handle": "cpp",
+        "__tree": "cpp",
+        "cmath": "cpp",
+        "numeric": "cpp",
+        "optional": "cpp",
+        "random": "cpp"
     }
 }

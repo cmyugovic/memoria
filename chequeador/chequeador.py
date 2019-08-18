@@ -22,9 +22,9 @@ def max(ctype, ntype):
     
 def main():
     #python chequeador.py peligro-mezcla4-min-riesgo-zona7-2k-AE.2.hazmat solucion-mezcla4-min-riesgo-zona7-2k-AE.2.hazmat
-    
     fin1=open(sys.argv[1], 'r')
-    
+    #python chequeador.py peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat solucion-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat
+
     ntrucks=int(fin1.readline().strip('\n'))
     #print 'ntrucks:' + str(ntrucks)
     #fout.write(str(ntrucks) + "\n")
