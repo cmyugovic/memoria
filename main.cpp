@@ -9,7 +9,7 @@
 using namespace std;
 
 int populationSize=10;
-int generations=10;
+int generations=100;
 ///////////////////////Global variables
 int _nTrucks; //Number of trucks
 int _nNodes; //Number of nodes
@@ -124,22 +124,6 @@ void readData(){
     return;
 }
 
-/*bool checkValidNodeType(vector<bool> routeTypes, int nodeType){
-    if(nodeType==0 && routeTypes[1] && routeTypes[4]){    // B/E =/> A
-        return false;
-    } else if(nodeType==1 && routeTypes[0]){        // A =/> B
-        return false;
-    } else if(from==2 && to==3){        // D =/> C
-        return false;
-    } else if(from==3 && to==2){        // C =/> D
-        return false;
-    } else if(from==4 && to==0){        // A =/> E
-        return false;
-    } else {
-        return true;
-    }
-    [0] && [1] || [0] && [4] || 
-}*/
 bool checkValidWasteTypes(vector<bool> types){
     return(
         !(  
@@ -176,12 +160,12 @@ tuple<int,int> evaluateRoute(vector<int> route){
 }
 
 int evaluateSolution(vector<vector<int>> solution){
-    int totalDistance=0
+    int totalDistance=0;
     int totalRisk=0;
     for(int i=0;i<solution.size();i++){
         tuple<int,int> route=evaluateRoute(solution[i]);
-        totalDistance+=get<0>(tuple);
-        totalRisk+=get<0>(tuple);
+        totalDistance+=get<0>(route);
+        totalRisk+=get<0>(route);
     }
     return totalDistance+totalRisk;
 }
@@ -195,8 +179,9 @@ void printSolution(vector<vector<int>> solution){
         totalDistance+=get<0>(evaluations[i]);
         totalRisk+=get<1>(evaluations[i]);
     }
-    cout << totalDistance << " " << totalRisk << "\n";
+    cout << "Total Distance and Risk: "<< totalDistance << " " << totalRisk << "\n";
     for(int i=0;i<solution.size();i++){
+        cout << "route: \n";
         for(int j=0;j<solution[i].size();j++){
             cout << _nodes[solution[i][j]] << " ";
         }
@@ -233,7 +218,6 @@ vector<vector<int>> generateRandomSolution(){
         unvisitedNodes.push_back(i);
     }
     shuffle(begin(unvisitedNodes), end(unvisitedNodes), rng);
-
     vector<vector<int>> solution;
     for(int truck=0;truck<_nTrucks;truck++){
         vector<int> truckRoute;
@@ -257,47 +241,145 @@ vector<vector<int>> generateRandomSolution(){
         }
         truckRoute.push_back(0);
         solution.push_back(truckRoute);
-        /*cout << "route\n";
-        printVector(truckRoute);
-        cout << "distance: " << routeDistance << "\n";
-        cout << "risk: " << routeRisk << "\n\n";
-        totalDistance+=routeDistance;
-        totalRisk+=routeRisk;*/
+
     }
-    cout << "unvisited\n";
-    printVector(unvisitedNodes);
-    cout << "end\n";
-    /*cout << "total distance: " << totalDistance << "\n";
-    cout << "total risk: " << totalRisk << "\n";*/
     return solution;
 }
+
+//swap 2 nodes from the same truck route
+void swapNodesFromRoute(vector<vector<int>> &solution){
+    uniform_int_distribution<int> randomTruckDistribution(0,solution.size());
+    int randomTruck=randomTruckDistribution(rng);
+    int randomTruckIndex;
+    int routeSize;
+    for(int i=0;i<solution.size();i++){
+        randomTruckIndex=(i+randomTruck)%solution.size();
+        routeSize=solution[randomTruckIndex].size();
+        if(routeSize>3){
+            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-2);
+            int randomNode=randomNodeDistribution(rng);
+            int randomNode2=randomNodeDistribution(rng);
+            if(randomNode==randomNode2){
+                randomNode2=(randomNode2+1)%(routeSize-2);
+            }
+            int aux=solution[randomTruckIndex][randomNode+1];
+            solution[randomTruckIndex][randomNode+1]=solution[randomTruckIndex][randomNode2+1];
+            solution[randomTruckIndex][randomNode2+1]=aux;
+            return;
+        }
+    }
+}
+
+//Change a node to another truck route
+void changeNodeRoute(vector<vector<int>> &solution){
+    uniform_int_distribution<int> randomTruckDistribution(0,solution.size());
+    int randomTruck=randomTruckDistribution(rng);
+    int randomTruckIndex;
+    int routeSize;
+    for(int i=0;i<solution.size();i++){
+        randomTruckIndex=(i+randomTruck)%solution.size();
+        routeSize=solution[randomTruckIndex].size();
+        if(routeSize>2){
+            int randomTruck2=randomTruckDistribution(rng);
+            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-2);
+            int randomNode=randomNodeDistribution(rng);
+            if(randomTruckIndex==randomTruck2){
+                randomTruck2=(randomTruck2+1)%(solution.size());
+            }
+            int aux=solution[randomTruckIndex][randomNode+1];
+            solution[randomTruckIndex].erase(solution[randomTruckIndex].begin()+randomNode+1);
+
+            uniform_int_distribution<int> randomNodeDistribution2(0,solution[randomTruck2].size()-2);
+            int randomNode2=randomNodeDistribution2(rng);
+            solution[randomTruck2].insert(solution[randomTruck2].begin()+randomNode2+1, aux);
+            return;
+        }
+    }
+}
+
+//do a random mutation
+void mutate(vector<vector<int>> &solution){
+    uniform_int_distribution<int> randomMutationDistribution(0,1);
+    int randomMutation=randomMutationDistribution(rng);
+    if(randomMutation==0){
+        swapNodesFromRoute(solution);
+    } else if(randomMutation==1){
+        changeNodeRoute(solution);
+    }
+}
+
+
+
 
 //main
 int main() 
 {
     rng.seed(123);
-    //read file
+    //read  file
     readData();
     vector<vector<vector<int>>> population;
     vector<int> scores;
-    for(int i; i<populationSize; i++){
-        population.push_back(generateRandomSolution());
-        scores.push_back(evaluateSolution(population[i]));
-        writeSolution(population[i]);
-    }
-
-    for(int i; i<generations;i++){
-
-    }
-
-    /*vector<vector<int>> solution;
-    for(int truck=0; truck<_nTrucks; truck++){
-        for(int type=0; type<5; type++){
-            for(int node=0; node<_nNodes; node++){
-
+    for(int i=0; i<populationSize; i++){
+        vector<vector<int>> solution=generateRandomSolution();
+        int score=evaluateSolution(solution);
+        if(i==0){
+            scores.push_back(score);
+            population.push_back(solution);
+        }else{
+            bool inserted=false;
+            for(int j=0;j<scores.size();j++){
+                if(scores[j]>=score){
+                    scores.insert(scores.begin()+j, score);
+                    population.insert(population.begin()+j, solution);
+                    inserted=true;
+                    break;
+                }
+            }
+            if(!inserted){
+                scores.push_back(score);
+                population.push_back(solution);
             }
         }
-    }*/
+    }
+
+    vector<vector<vector<int>>> newPopulation;
+    vector<int> newScores;
+    for(int i; i<1;i++){
+        for(int i=0; i<populationSize; i++){
+            vector<vector<int>> solution(population[i%(populationSize/2)]);
+            mutate(solution);
+            printSolution(solution);
+            //>Nint score=evaluateSolution(solution);
+            /*
+            if(i==0){
+                newScores.push_back(score);
+                newPopulation.push_back(solution);
+            }else{
+                bool inserted=false;
+                for(int j=0;j<newScores.size();j++){
+                    if(newScores[j]>=score){
+                        newScores.insert(newScores.begin()+j, score);
+                        newPopulation.insert(newPopulation.begin()+j, solution);
+                        inserted=true;
+                        break;
+                    }
+                }
+                if(!inserted){
+                    newScores.push_back(score);
+                    newPopulation.push_back(solution);
+                }
+            }*/
+        }
+        /*
+        vector<int>().swap(scores);
+        vector<vector<vector<int>>>().swap(population);
+        scores=newScores;
+        population=newPopulation;
+        vector<int>().swap(newScores);
+        vector<vector<vector<int>>>().swap(newPopulation);
+        printSolution(population[0]);*/
+    }
+
     
     return 0;
 }
