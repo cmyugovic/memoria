@@ -320,11 +320,12 @@ void changeNodeRoute(vector<vector<int>> &solution){
         routeSize=solution[randomTruckIndex].size();
         if(routeSize>2){
             int randomTruck2=randomTruckDistribution(rng);
-            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-3);
-            int randomNode=randomNodeDistribution(rng);
             if(randomTruckIndex==randomTruck2){
                 randomTruck2=(randomTruck2+1)%(solution.size());
             }
+            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-3);
+            int randomNode=randomNodeDistribution(rng);
+
             int aux=solution[randomTruckIndex][randomNode+1];
             solution[randomTruckIndex].erase(solution[randomTruckIndex].begin()+randomNode+1);
 
@@ -344,7 +345,7 @@ void mutate(vector<vector<int>> &solution){
     if(randomMutation==0){
         swapNodesFromRoute(solution);
     } else if(randomMutation==1){
-        changeNodeRoute(solution);
+        //changeNodeRoute(solution);
     }
 }
 
