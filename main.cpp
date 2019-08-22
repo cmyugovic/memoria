@@ -8,8 +8,8 @@
 
 using namespace std;
 
-int populationSize=10;
-int generations=100;
+int populationSize=100;
+int generations=10000;
 ///////////////////////Global variables
 int _nTrucks; //Number of trucks
 int _nNodes; //Number of nodes
@@ -142,6 +142,41 @@ bool checkValidWasteTypes(vector<bool> types, int newType){
         )
     );
 }
+bool checkValidNodeIntoRoute(int node, vector<int> route){
+    int nodeType=_types[node];
+    if(nodeType==0){
+        for(int i=0;i<route.size();i++){
+            if(_types[route[i]]==1 || _types[route[i]]==4){
+                return false;
+            }
+        }
+    } else if(nodeType==1){
+        for(int i=0;i<route.size();i++){
+            if(_types[route[i]]==0){
+                return false;
+            }
+        }
+    } else if(nodeType==2){
+        for(int i=0;i<route.size();i++){
+            if(_types[route[i]]==3){
+                return false;
+            }
+        }        
+    } else if(nodeType==3){
+        for(int i=0;i<route.size();i++){
+            if(_types[route[i]]==2){
+                return false;
+            }
+        }        
+    } else if(nodeType==4){
+        for(int i=0;i<route.size();i++){
+            if(_types[route[i]]==0){
+                return false;
+            }
+        }        
+    }
+    return true;
+}
 
 tuple<int,int> evaluateRoute(vector<int> route){
     int distance=_emptyDistance[route[1]];
@@ -248,7 +283,7 @@ vector<vector<int>> generateRandomSolution(){
 
 //swap 2 nodes from the same truck route
 void swapNodesFromRoute(vector<vector<int>> &solution){
-    uniform_int_distribution<int> randomTruckDistribution(0,solution.size());
+    uniform_int_distribution<int> randomTruckDistribution(0,solution.size()-1);
     int randomTruck=randomTruckDistribution(rng);
     int randomTruckIndex;
     int routeSize;
@@ -256,7 +291,7 @@ void swapNodesFromRoute(vector<vector<int>> &solution){
         randomTruckIndex=(i+randomTruck)%solution.size();
         routeSize=solution[randomTruckIndex].size();
         if(routeSize>3){
-            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-2);
+            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-3);
             int randomNode=randomNodeDistribution(rng);
             int randomNode2=randomNodeDistribution(rng);
             if(randomNode==randomNode2){
@@ -271,8 +306,12 @@ void swapNodesFromRoute(vector<vector<int>> &solution){
 }
 
 //Change a node to another truck route
+//Falta revisar
+//Si el nodo
+//Es valido
+//para la ruta
 void changeNodeRoute(vector<vector<int>> &solution){
-    uniform_int_distribution<int> randomTruckDistribution(0,solution.size());
+    uniform_int_distribution<int> randomTruckDistribution(0,solution.size()-1);
     int randomTruck=randomTruckDistribution(rng);
     int randomTruckIndex;
     int routeSize;
@@ -281,7 +320,7 @@ void changeNodeRoute(vector<vector<int>> &solution){
         routeSize=solution[randomTruckIndex].size();
         if(routeSize>2){
             int randomTruck2=randomTruckDistribution(rng);
-            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-2);
+            uniform_int_distribution<int> randomNodeDistribution(0,routeSize-3);
             int randomNode=randomNodeDistribution(rng);
             if(randomTruckIndex==randomTruck2){
                 randomTruck2=(randomTruck2+1)%(solution.size());
@@ -289,9 +328,10 @@ void changeNodeRoute(vector<vector<int>> &solution){
             int aux=solution[randomTruckIndex][randomNode+1];
             solution[randomTruckIndex].erase(solution[randomTruckIndex].begin()+randomNode+1);
 
-            uniform_int_distribution<int> randomNodeDistribution2(0,solution[randomTruck2].size()-2);
+            uniform_int_distribution<int> randomNodeDistribution2(0,solution[randomTruck2].size()-3);
             int randomNode2=randomNodeDistribution2(rng);
-            solution[randomTruck2].insert(solution[randomTruck2].begin()+randomNode2+1, aux);
+            //solution[randomTruck2].resize(200,aux);
+            //solution[randomTruck2].insert(solution[randomTruck2].begin()+randomNode2+1, aux);
             return;
         }
     }
@@ -344,13 +384,12 @@ int main()
 
     vector<vector<vector<int>>> newPopulation;
     vector<int> newScores;
-    for(int i; i<1;i++){
+    for(int i; i<generations;i++){
         for(int i=0; i<populationSize; i++){
             vector<vector<int>> solution(population[i%(populationSize/2)]);
             mutate(solution);
-            printSolution(solution);
-            //>Nint score=evaluateSolution(solution);
-            /*
+            int score=evaluateSolution(solution);
+            
             if(i==0){
                 newScores.push_back(score);
                 newPopulation.push_back(solution);
@@ -368,17 +407,17 @@ int main()
                     newScores.push_back(score);
                     newPopulation.push_back(solution);
                 }
-            }*/
+            }
         }
-        /*
+        
         vector<int>().swap(scores);
         vector<vector<vector<int>>>().swap(population);
         scores=newScores;
         population=newPopulation;
         vector<int>().swap(newScores);
         vector<vector<vector<int>>>().swap(newPopulation);
-        printSolution(population[0]);*/
     }
+    printSolution(population[0]);
 
     
     return 0;
