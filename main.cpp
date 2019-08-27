@@ -8,8 +8,8 @@
 
 using namespace std;
 
-int populationSize = 2;
-int generations = 0;
+int populationSize = 1000;
+int generations = 10;
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
 int _nNodes;                            //Number of nodes
@@ -30,7 +30,7 @@ void printVector(vector<int> vector)
 {
     for (int i = 0; i < vector.size(); ++i)
         std::cout << vector[i] << ' ';
-    cout << "\n";
+    std::cout << "\n";
 }
 
 /////////////////////// Constants
@@ -249,16 +249,16 @@ void printSolution(vector<vector<int>> solution)
         totalDistance += get<0>(evaluations[i]);
         totalRisk += get<1>(evaluations[i]);
     }
-    cout << "Total Distance and Risk: " << totalDistance << " " << totalRisk << "\n";
+    std::cout << "Total Distance and Risk: " << totalDistance << " " << totalRisk << "\n";
     for (int i = 0; i < solution.size(); i++)
     {
-        cout << "route: \n";
+        std::cout << "route: \n";
         for (int j = 0; j < solution[i].size(); j++)
         {
-            cout << _nodes[solution[i][j]] << " ";
+            std::cout << _nodes[solution[i][j]] << " ";
         }
-        cout << get<0>(evaluations[i]) << " ";
-        cout << get<1>(evaluations[i]) << "\n";
+        std::cout << get<0>(evaluations[i]) << " ";
+        std::cout << get<1>(evaluations[i]) << "\n";
     }
 }
 
@@ -465,7 +465,6 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
     vector<vector<int>> child;
     vector<vector<bool>> childRouteTypes;
     vector<int> availableCapacities;
-
     bool turn = false;
     vector<int> unvisitedNodes;
     for (int i = 1; i < _nNodes; i++)
@@ -482,9 +481,9 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
         availableCapacities.push_back(_capacities[truck]);
     }
 
-/*     while (unvisitedNodes.size() > 0)
+    for (int truck = 0; truck < _nTrucks; truck++)
     {
-        for (int truck = 0; truck < _nTrucks; truck++)
+        while (true)
         {
             int newNode;
             if (turn) //Finds the node on the current parent that connects to the current child node
@@ -502,18 +501,55 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
             {
                 newNode = findRandomValidNode(unvisitedNodes, childRouteTypes[truck], availableCapacities[truck]);
             }
-            cout << newNode;
+            if (newNode == -1)
+            { //no valid node found
+                break;
+            }
             erase(newNode, unvisitedNodes);
             childRouteTypes[truck][_types[newNode]] = true;
             availableCapacities[truck] -= _productions[newNode];
+            child[truck].push_back(newNode);
             turn = !turn; //Swap parent turn for the next iteration
         }
+    }
 
-        for (int truck = 0; truck < _nTrucks; truck++)
+    /* while (unvisitedNodes.size() > 0)
+    {
+        for (int truck = 0; truck < _nTrucks; truck++)//CAMBIAR A 1 CAMION A LA VES
         {
-            child[truck].push_back(0);
+            int newNode;
+            if (turn) //Finds the node on the current parent that connects to the current child node
+            {
+                newNode = findNodeConnection(*child[truck].end(), parent1);
+            }
+            else
+            {
+                newNode = findNodeConnection(*child[truck].end(), parent2);
+            }
+            if ( //If node is already visited or the node is not valid, a random valid node is selected
+                !find(unvisitedNodes, newNode) ||
+                !checkValidWasteTypes(childRouteTypes[truck], _types[newNode]) ||
+                availableCapacities[truck] < _productions[newNode])
+            {
+                newNode = findRandomValidNode(unvisitedNodes, childRouteTypes[truck], availableCapacities[truck]);
+            }
+            if(newNode==-1){//no valid node found
+
+                continue;
+            }
+            std::cout << newNode;
+            erase(newNode, unvisitedNodes);
+            childRouteTypes[truck][_types[newNode]] = true;
+            availableCapacities[truck] -= _productions[newNode];
+            child[truck].push_back(newNode);
+            turn = !turn; //Swap parent turn for the next iteration
         }
     } */
+
+    for (int truck = 0; truck < _nTrucks; truck++)
+    {
+        child[truck].push_back(0);
+    }
     return child;
 }
 
@@ -535,7 +571,7 @@ int main()
             population.push_back(solution);
         }
         else
-        {
+        { //Insert solutions ordered by score
             bool inserted = false;
             for (int j = 0; j < scores.size(); j++)
             {
@@ -557,12 +593,60 @@ int main()
 
     vector<vector<vector<int>>> newPopulation;
     vector<int> newScores;
+    for (int gen = 0; gen < generations; gen++)
+    {
+        std::cout << "Generation " << gen << "\n";
+        int i = 0;
+        while (newPopulation.size() < populationSize)
+        {
+            i++;
+            for (int k = 0; k < i; k++)
+            {
+                vector<vector<int>> solution = AEX(population[i], population[k]);
+                int score = evaluateSolution(solution);
+
+                if (i == 0)
+                {
+                    newScores.push_back(score);
+                    newPopulation.push_back(solution);
+                }
+                else
+                { //Insert solutions ordered by score
+                    bool inserted = false;
+                    for (int j = 0; j < newScores.size(); j++)
+                    {
+                        if (newScores[j] >= score)
+                        {
+                            newScores.insert(newScores.begin() + j, score);
+                            newPopulation.insert(newPopulation.begin() + j, solution);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    if (!inserted)
+                    {
+                        newScores.push_back(score);
+                        newPopulation.push_back(solution);
+                    }
+                }
+            }
+        }
+
+        vector<int>().swap(scores);
+        vector<vector<vector<int>>>().swap(population);
+        scores = newScores;
+        population = newPopulation;
+        vector<int>().swap(newScores);
+        vector<vector<vector<int>>>().swap(newPopulation);
+        printSolution(population[0]);
+    }
+    /* vector<vector<vector<int>>> newPopulation;
+    vector<int> newScores;
     for (int i; i < generations; i++)
     {
         for (int i = 0; i < populationSize; i++)
         {
             vector<vector<int>> solution(population[i % (populationSize / 2)]);
-            mutate(solution);
             int score = evaluateSolution(solution);
 
             if (i == 0)
@@ -597,17 +681,21 @@ int main()
         population = newPopulation;
         vector<int>().swap(newScores);
         vector<vector<vector<int>>>().swap(newPopulation);
-    }
-    //printSolution(population[0]);
+    } */
+
+    /*
     vector<vector<int>> solution1 = generateRandomSolution();
     vector<vector<int>> solution2 = generateRandomSolution();
     vector<vector<int>> child = AEX(solution1, solution2);
-    cout << "\nparent 1: \n";
+    std::cout << "\nparent 1: \n";
     printSolution(solution1);
-    cout << "\nparent 2: \n";
+    std::cout << "\nparent 2: \n";
     printSolution(solution2);
-    cout << "\nchild: \n";
-    printSolution(child);
+    std::cout << "\nchild: \n";
+    //printVector(child[0]);
+    //printVector(child[1]);
+    //printVector(child[2]);
+    printSolution(child); */
 
     return 0;
 }

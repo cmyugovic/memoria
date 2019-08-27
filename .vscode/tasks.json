@@ -1,0 +1,50 @@
+{
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "clang++ build active file",
+      "command": "/usr/bin/clang++",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "options": {
+        "cwd": "/usr/bin"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "clang++11 build active file",
+      "command": "/usr/bin/clang++",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}",
+        "-std=c++11",
+        "--debug"
+      ],
+      "options": {
+        "cwd": "/usr/bin"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "clang build active file",
+      "command": "/usr/bin/clang",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "options": {
+        "cwd": "/usr/bin"
+      },
+      "problemMatcher": ["$gcc"]
+    }
+  ],
+  "version": "2.0.0"
+}
