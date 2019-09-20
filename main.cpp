@@ -5,11 +5,21 @@
 #include <vector>
 #include <map>
 #include <random>
+#include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
-int populationSize = 1000;
-int generations = 10;
+
+
+///////////////////////Configuration
+int populationSize = 200;
+int generations = 1000;
+int tournamentSize=10;
+string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
+
+
+
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
 int _nNodes;                            //Number of nodes
@@ -25,6 +35,19 @@ vector<vector<vector<int>>> _risks;     // Risks between nodes for each waste ty
 typedef std::mt19937 RNG;
 uint32_t seed_val;
 RNG rng;
+
+
+std::string GetCurrentTimeForFileName()
+{
+    auto time = std::time(nullptr);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time), "%F_%T"); // ISO 8601 without timezone information.
+    auto s = ss.str();
+    std::replace(s.begin(), s.end(), ':', '-');
+    return s;
+}
+
+string currentTime=GetCurrentTimeForFileName();
 
 void printVector(vector<int> vector)
 {
@@ -84,7 +107,7 @@ vector<int> split(string str, char delimiter)
 
 void readData()
 {
-    ifstream infile("instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat");
+    ifstream infile(filePath);
     string line;
 
     //read number of trucks
@@ -225,7 +248,7 @@ tuple<int, int> evaluateRoute(vector<int> route)
     return make_tuple(distance, risk);
 }
 
-int evaluateSolution(vector<vector<int>> solution)
+tuple<int, int> evaluateSolution(vector<vector<int>> solution)
 {
     int totalDistance = 0;
     int totalRisk = 0;
@@ -233,9 +256,9 @@ int evaluateSolution(vector<vector<int>> solution)
     {
         tuple<int, int> route = evaluateRoute(solution[i]);
         totalDistance += get<0>(route);
-        totalRisk += get<0>(route);
+        totalRisk += get<1>(route);
     }
-    return totalDistance + totalRisk;
+    return make_tuple(totalDistance, totalRisk);
 }
 
 void printSolution(vector<vector<int>> solution)
@@ -265,7 +288,9 @@ void printSolution(vector<vector<int>> solution)
 void writeSolution(vector<vector<int>> solution)
 {
     ofstream output;
-    output.open("output.txt");
+    ofstream newOutput;
+    output.open("full_output_"+currentTime+".txt", ios_base::app);
+    newOutput.open("score_output_"+currentTime+".txt", ios_base::app);
     vector<tuple<int, int>> evaluations;
     int totalDistance = 0;
     int totalRisk = 0;
@@ -285,7 +310,12 @@ void writeSolution(vector<vector<int>> solution)
         output << get<0>(evaluations[i]) << " ";
         output << get<1>(evaluations[i]) << "\n";
     }
+
+    newOutput << totalDistance << " " << totalRisk << "\n";
+    output << "\n";
     output.close();
+    newOutput.close();
+
 }
 
 vector<vector<int>> generateRandomSolution()
@@ -557,145 +587,149 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
 int main()
 {
     rng.seed(123);
-    //read  file
     readData();
     vector<vector<vector<int>>> population;
-    vector<int> scores;
+    vector<int> distanceScores;
+    vector<int> riskScores;
+    uniform_int_distribution<int> randomSolutionDistribution(0, populationSize/2 - 1);
+
+    //Create initial population
     for (int i = 0; i < populationSize; i++)
     {
         vector<vector<int>> solution = generateRandomSolution();
-        int score = evaluateSolution(solution);
-        if (i == 0)
-        {
-            scores.push_back(score);
-            population.push_back(solution);
-        }
-        else
-        { //Insert solutions ordered by score
-            bool inserted = false;
-            for (int j = 0; j < scores.size(); j++)
-            {
-                if (scores[j] >= score)
-                {
-                    scores.insert(scores.begin() + j, score);
-                    population.insert(population.begin() + j, solution);
-                    inserted = true;
-                    break;
-                }
-            }
-            if (!inserted)
-            {
-                scores.push_back(score);
-                population.push_back(solution);
-            }
-        }
+        tuple<int, int> score = evaluateSolution(solution);
+        distanceScores.push_back(get<0>(score));
+        riskScores.push_back(get<1>(score));
+        population.push_back(solution);
     }
 
-    vector<vector<vector<int>>> newPopulation;
-    vector<int> newScores;
+
     for (int gen = 0; gen < generations; gen++)
     {
-        std::cout << "Generation " << gen << "\n";
-        int i = 0;
-        while (newPopulation.size() < populationSize)
-        {
-            i++;
-            for (int k = 0; k < i; k++)
-            {
-                vector<vector<int>> solution = AEX(population[i], population[k]);
-                int score = evaluateSolution(solution);
-
-                if (i == 0)
-                {
-                    newScores.push_back(score);
-                    newPopulation.push_back(solution);
-                }
-                else
-                { //Insert solutions ordered by score
-                    bool inserted = false;
-                    for (int j = 0; j < newScores.size(); j++)
-                    {
-                        if (newScores[j] >= score)
-                        {
-                            newScores.insert(newScores.begin() + j, score);
-                            newPopulation.insert(newPopulation.begin() + j, solution);
-                            inserted = true;
-                            break;
-                        }
-                    }
-                    if (!inserted)
-                    {
-                        newScores.push_back(score);
-                        newPopulation.push_back(solution);
-                    }
-                }
-            }
+        vector<vector<vector<int>>> newPopulation;
+        vector<int> newDistanceScores;
+        vector<int> newRiskScores;
+        vector<vector<int>> dominatedSolutions; //list of solutions dominated by each solution
+        vector<int> dominationCount;            //count of solutions that dominate each solution
+        if(gen%10==0){
+            std::cout << "\nGeneration " << gen << "\n";
         }
-
-        vector<int>().swap(scores);
-        vector<vector<vector<int>>>().swap(population);
-        scores = newScores;
-        population = newPopulation;
-        vector<int>().swap(newScores);
-        vector<vector<vector<int>>>().swap(newPopulation);
-        printSolution(population[0]);
-    }
-    /* vector<vector<vector<int>>> newPopulation;
-    vector<int> newScores;
-    for (int i; i < generations; i++)
-    {
+        ////////Selection step/////////
+        vector<int> firstFront;
+        //Calculate domination count and dominated solutions for each solution O(mn^2)
         for (int i = 0; i < populationSize; i++)
         {
-            vector<vector<int>> solution(population[i % (populationSize / 2)]);
-            int score = evaluateSolution(solution);
-
-            if (i == 0)
+            vector<int> dominated;
+            dominatedSolutions.push_back(dominated);
+            dominationCount.push_back(0);
+            for (int j = 0; j < populationSize; j++)
             {
-                newScores.push_back(score);
-                newPopulation.push_back(solution);
-            }
-            else
-            {
-                bool inserted = false;
-                for (int j = 0; j < newScores.size(); j++)
+                if (i == j)
                 {
-                    if (newScores[j] >= score)
-                    {
-                        newScores.insert(newScores.begin() + j, score);
-                        newPopulation.insert(newPopulation.begin() + j, solution);
-                        inserted = true;
-                        break;
-                    }
+                    continue;
                 }
-                if (!inserted)
+                if (riskScores[i] < riskScores[j] && distanceScores[i] < distanceScores[j]) //i dominates j
                 {
-                    newScores.push_back(score);
-                    newPopulation.push_back(solution);
+                    dominatedSolutions[i].push_back(j);
+                }
+                else if (riskScores[i] > riskScores[j] && distanceScores[i] > distanceScores[j]) //j dominates i
+                {
+                    dominationCount[i]++;
+                }
+            }
+            if (dominationCount[i] == 0)
+            {
+                firstFront.push_back(i);
+                if(gen==generations-1){
+                    writeSolution(population[i]);
                 }
             }
         }
 
-        vector<int>().swap(scores);
-        vector<vector<vector<int>>>().swap(population);
-        scores = newScores;
-        population = newPopulation;
-        vector<int>().swap(newScores);
-        vector<vector<vector<int>>>().swap(newPopulation);
-    } */
+        //Select best solutions for the next generation O(mn^2)
+        vector<int> orderedSolutions;
+        bool isFirstFront=true;
+        while (firstFront.size() > 0)
+        {
+            vector<int> nextFront;
+            if(gen%10==0 && isFirstFront){
+                cout << "First front size: " << firstFront.size() << "\n";
+            }
+            //printVector(firstFront);
+            //printVector(dominationCount);
 
-    /*
-    vector<vector<int>> solution1 = generateRandomSolution();
-    vector<vector<int>> solution2 = generateRandomSolution();
-    vector<vector<int>> child = AEX(solution1, solution2);
-    std::cout << "\nparent 1: \n";
-    printSolution(solution1);
-    std::cout << "\nparent 2: \n";
-    printSolution(solution2);
-    std::cout << "\nchild: \n";
-    //printVector(child[0]);
-    //printVector(child[1]);
-    //printVector(child[2]);
-    printSolution(child); */
+            for (int i = 0; i < firstFront.size(); i++)
+            {
+                int currentSolution = firstFront[i];
+                orderedSolutions.push_back(currentSolution);
+                dominationCount[currentSolution] = -1; //flag to ignore it
+                if(gen%10==0 && isFirstFront){
+                    cout<<distanceScores[currentSolution]<<" ";
+                    cout<<riskScores[currentSolution]<<"\n";
+                }
+                //cout << "Current solution:" << currentSolution << "\n";
+                //cout << "Dominated solutions size: " << dominatedSolutions[currentSolution].size() << "\n";
+
+
+                for (int j = 0; j < dominatedSolutions[currentSolution].size(); j++)
+                {
+                    int currentDominatedSolution = dominatedSolutions[currentSolution][j];
+                    dominationCount[currentDominatedSolution]--;
+                    if (dominationCount[currentDominatedSolution] == 0)
+                    {
+                        nextFront.push_back(currentDominatedSolution);
+                    }
+                }
+            }
+            firstFront = nextFront;
+            isFirstFront=false;
+        }
+
+        for (int i = 0; i < populationSize / 2; i++)
+        {
+            newPopulation.push_back(population[orderedSolutions[i]]);
+            tuple<int, int> score = evaluateSolution(population[orderedSolutions[i]]);
+            newDistanceScores.push_back(get<0>(score));
+            newRiskScores.push_back(get<1>(score));
+        }
+
+        for (int i = 0; i < populationSize / 2; i++)//Select the 2 best solutions of the tournament to generate a child
+        {
+            int randomSolution = randomSolutionDistribution(rng);
+            int bestSolution=randomSolution;
+            int bestDominatedCount=dominatedSolutions[randomSolution].size();
+            int secondBestSolution;
+            randomSolution = randomSolutionDistribution(rng);
+            if(dominatedSolutions[randomSolution].size()>bestDominatedCount){
+                secondBestSolution=bestSolution;
+                bestSolution=randomSolution;
+                bestDominatedCount=dominatedSolutions[randomSolution].size();
+            } else{
+                secondBestSolution=randomSolution;
+            }
+
+            for(int j=0;j<tournamentSize-1;j++){
+                randomSolution = randomSolutionDistribution(rng);
+                if(dominatedSolutions[randomSolution].size()>bestDominatedCount){
+                    secondBestSolution=bestSolution;
+                    bestSolution=randomSolution;
+                    bestDominatedCount=dominatedSolutions[randomSolution].size();
+                } else{
+                    secondBestSolution=randomSolution;
+                }
+            }
+
+            vector<vector<int>> newSolution=AEX(population[bestSolution],population[secondBestSolution]);
+            newPopulation.push_back(newSolution);
+            tuple<int, int> score = evaluateSolution(newSolution);
+            newDistanceScores.push_back(get<0>(score));
+            newRiskScores.push_back(get<1>(score));
+        }
+
+        riskScores = newRiskScores;
+        distanceScores = newDistanceScores;
+        population = newPopulation;
+    }
 
     return 0;
 }
