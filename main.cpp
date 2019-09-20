@@ -19,6 +19,7 @@ int generations = 1000;
 int tournamentSize=10;
 int mutationChance=1;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
 int mutationTotal=2;
+int seed=123;
 
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
@@ -597,7 +598,6 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 //main
 int main(int argc, char *argv[])
 {   
-    rng.seed(123);
     if(cmdOptionExists(argv, argv+argc, "-fp"))
     {
         filePath=getCmdOption(argv, argv+argc, "-fp");
@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
     }
     if(cmdOptionExists(argv, argv+argc, "-s"))
     {
-        rng.seed(stoi(getCmdOption(argv, argv+argc, "-s")));
+        seed=stoi(getCmdOption(argv, argv+argc, "-s"));
     }
     if(cmdOptionExists(argv, argv+argc, "-filePath"))
     {
@@ -652,9 +652,9 @@ int main(int argc, char *argv[])
     }
     if(cmdOptionExists(argv, argv+argc, "-seed"))
     {
-        rng.seed(stoi(getCmdOption(argv, argv+argc, "-seed")));
+        seed=stoi(getCmdOption(argv, argv+argc, "-seed"));
     }
-
+    rng.seed(seed);
     readData();
     vector<vector<vector<int>>> population;
     vector<int> distanceScores;
