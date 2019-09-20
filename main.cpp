@@ -383,10 +383,7 @@ void swapNodesFromRoute(vector<vector<int>> &solution)
 }
 
 //Change a node to another truck route
-//Falta revisar
-//Si el nodo
-//Es valido
-//para la ruta
+//Currently bugged
 void changeNodeRoute(vector<vector<int>> &solution)
 {
     uniform_int_distribution<int> randomTruckDistribution(0, solution.size() - 1);
@@ -431,7 +428,7 @@ void mutate(vector<vector<int>> &solution)
     }
     else if (randomMutation == 1)
     {
-        changeNodeRoute(solution);
+        //Do nothing
     }
 }
 
@@ -720,6 +717,7 @@ int main()
             }
 
             vector<vector<int>> newSolution=AEX(population[bestSolution],population[secondBestSolution]);
+            mutate(newSolution);//50% chance to swap 2 nodes from the same route. 50% chance to do nothing
             newPopulation.push_back(newSolution);
             tuple<int, int> score = evaluateSolution(newSolution);
             newDistanceScores.push_back(get<0>(score));
