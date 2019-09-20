@@ -13,12 +13,12 @@ using namespace std;
 
 
 ///////////////////////Configuration
+string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
 int generations = 1000;
 int tournamentSize=10;
-string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
-
-
+int mutationChance=1;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
+int mutationTotal=2;
 
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
@@ -419,14 +419,13 @@ void changeNodeRoute(vector<vector<int>> &solution)
 //do a random mutation
 void mutate(vector<vector<int>> &solution)
 {
-    uniform_int_distribution<int> randomMutationDistribution(0, 1);
-    //int randomMutation = randomMutationDistribution(rng);
-    int randomMutation = 0;
-    if (randomMutation == 0)
+    uniform_int_distribution<int> randomMutationDistribution(1, mutationTotal);
+    int randomMutation = randomMutationDistribution(rng);
+    if (randomMutation <= mutationChance)
     {
         swapNodesFromRoute(solution);
     }
-    else if (randomMutation == 1)
+    else
     {
         //Do nothing
     }
@@ -580,10 +579,82 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
     return child;
 }
 
-//main
-int main()
+char* getCmdOption(char ** begin, char ** end, const std::string & option)
 {
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return *itr;
+    }
+    return 0;
+}
+
+bool cmdOptionExists(char** begin, char** end, const std::string& option)
+{
+    return std::find(begin, end, option) != end;
+}
+
+//main
+int main(int argc, char *argv[])
+{   
     rng.seed(123);
+    if(cmdOptionExists(argv, argv+argc, "-fp"))
+    {
+        filePath=getCmdOption(argv, argv+argc, "-fp");
+    }
+    if(cmdOptionExists(argv, argv+argc, "-p"))
+    {
+        populationSize=stoi(getCmdOption(argv, argv+argc, "-p"));
+    }
+    if(cmdOptionExists(argv, argv+argc, "-g"))
+    {
+        generations=stoi(getCmdOption(argv, argv+argc, "-g"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-ts"))
+    {
+        tournamentSize=stoi(getCmdOption(argv, argv+argc, "-ts"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-mc"))
+    {
+        mutationChance=stoi(getCmdOption(argv, argv+argc, "-mc"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-mt"))
+    {
+        mutationTotal=stoi(getCmdOption(argv, argv+argc, "-mt"));
+    }
+    if(cmdOptionExists(argv, argv+argc, "-s"))
+    {
+        rng.seed(stoi(getCmdOption(argv, argv+argc, "-s")));
+    }
+    if(cmdOptionExists(argv, argv+argc, "-filePath"))
+    {
+        filePath=getCmdOption(argv, argv+argc, "-filePath");
+    }
+    if(cmdOptionExists(argv, argv+argc, "-populationSize"))
+    {
+        populationSize=stoi(getCmdOption(argv, argv+argc, "-populationSize"));
+    }
+    if(cmdOptionExists(argv, argv+argc, "-generations"))
+    {
+        generations=stoi(getCmdOption(argv, argv+argc, "-generations"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-tournamentSize"))
+    {
+        tournamentSize=stoi(getCmdOption(argv, argv+argc, "-tournamentSize"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-mutationChance"))
+    {
+        mutationChance=stoi(getCmdOption(argv, argv+argc, "-mutationChance"));
+    }    
+    if(cmdOptionExists(argv, argv+argc, "-mutationTotal"))
+    {
+        mutationTotal=stoi(getCmdOption(argv, argv+argc, "-mutationTotal"));
+    }
+    if(cmdOptionExists(argv, argv+argc, "-seed"))
+    {
+        rng.seed(stoi(getCmdOption(argv, argv+argc, "-seed")));
+    }
+
     readData();
     vector<vector<vector<int>>> population;
     vector<int> distanceScores;
