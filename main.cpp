@@ -696,11 +696,13 @@ int main(int argc, char *argv[])
                 {
                     continue;
                 }
-                if (riskScores[i] < riskScores[j] && distanceScores[i] < distanceScores[j]) //i dominates j
+                if ((riskScores[i] <= riskScores[j] && distanceScores[i] < distanceScores[j])
+                    || (riskScores[i] < riskScores[j] && distanceScores[i] <= distanceScores[j])) //i dominates j
                 {
                     dominatedSolutions[i].push_back(j);
                 }
-                else if (riskScores[i] > riskScores[j] && distanceScores[i] > distanceScores[j]) //j dominates i
+                else if ((riskScores[i] >= riskScores[j] && distanceScores[i] > distanceScores[j])
+                    || (riskScores[i] > riskScores[j] && distanceScores[i] >= distanceScores[j])) //j dominates i
                 {
                     dominationCount[i]++;
                 }
