@@ -709,10 +709,34 @@ int main(int argc, char *argv[])
             }
             if (dominationCount[i] == 0)
             {
-                firstFront.push_back(i);
                 if(gen==generations-1){
-                    writeSolution(population[i]);
+                    bool equalSolutions=true;
+                    for(int j=0;j<firstFront.size();j++){//for each solution on first front, check if the new solution is the same
+                        equalSolutions=true;
+                        for(int truck=0; truck<population[firstFront[j]].size();truck++){
+                            if(population[firstFront[j]][truck].size()!=population[i][truck].size()){//if routes have different length
+                                equalSolutions=false;
+                                break;
+                            }
+                            for(int route=0; route<population[firstFront[j]][truck].size();route++){
+                                if(population[firstFront[j]][truck][route]!=population[i][truck][route]){
+                                    equalSolutions=false;
+                                    break;
+                                }
+                            }
+                            if(!equalSolutions){
+                                break;
+                            }
+                        }
+                        if(equalSolutions){
+                            break;
+                        }
+                    }
+                    if(!equalSolutions || firstFront.size()==0){
+                        writeSolution(population[i]);
+                    }
                 }
+                firstFront.push_back(i);
             }
         }
 
