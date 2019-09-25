@@ -485,6 +485,34 @@ int findRandomValidNode(vector<int> nodes, vector<bool> types, int availableCapa
     return -1;
 }
 
+bool checkEqualRoute(vector<int> route1, vector<int> route2){
+    if(route1.size()!=route2.size()){
+        return false;
+    }
+    for(int i=0;i<route1.size();i++){
+        if(route1[i]!=route2[i]){
+            return false;
+        }
+    }
+    return true;
+}
+
+bool checkEqualSolutions(vector<vector<int>> solution1, vector<vector<int>> solution2){
+    for(int i=0;i<_nTrucks;i++){
+        bool equalRoute=false;
+        for(int j=0;j<_nTrucks;j++){
+            if(checkEqualRoute(solution1[i],solution2[j])){
+                equalRoute=true;
+                break;
+            }
+        }
+        if(!equalRoute){
+            return false;
+        }
+    }
+    return true;
+}
+
 //Alternating edge crossover
 //Constructs the child by alternating arcs from parents
 vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2)
@@ -710,7 +738,7 @@ int main(int argc, char *argv[])
             if (dominationCount[i] == 0)
             {
                 if(gen==generations-1){
-                    bool equalSolutions=true;
+/*                     bool equalSolutions=true;
                     for(int j=0;j<firstFront.size();j++){//for each solution on first front, check if the new solution is the same
                         equalSolutions=true;
                         for(int truck=0; truck<population[firstFront[j]].size();truck++){
@@ -734,7 +762,8 @@ int main(int argc, char *argv[])
                     }
                     if(!equalSolutions || firstFront.size()==0){
                         writeSolution(population[i]);
-                    }
+                    } */                        
+                    writeSolution(population[i]);
                 }
                 firstFront.push_back(i);
             }
@@ -814,7 +843,18 @@ int main(int argc, char *argv[])
             }
 
             vector<vector<int>> newSolution=AEX(population[bestSolution],population[secondBestSolution]);
-            mutate(newSolution);//50% chance to swap 2 nodes from the same route. 50% chance to do nothing
+            mutate(newSolution);
+            bool repeatedSolution=false;
+            for(int j=0; j<newPopulation.size();j++){
+                if(checkEqualSolutions(newSolution, newPopulation[j])){
+                    repeatedSolution=true;
+                    break;
+                }
+            }
+            if(repeatedSolution){
+                i--;
+                continue;
+            }
             newPopulation.push_back(newSolution);
             tuple<int, int> score = evaluateSolution(newSolution);
             newDistanceScores.push_back(get<0>(score));
