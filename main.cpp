@@ -16,10 +16,11 @@ using namespace std;
 string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
 int generations = 1000;
-int tournamentSize=10;
-int mutationChance=1;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
+int tournamentSize=20;
+int mutationChance=2;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
 int mutationTotal=2;
 int seed=123;
+int hillClimbingIterations=1000;
 
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
@@ -136,6 +137,8 @@ void readData()
     //read distance from depot to nodes with an empty truck
     getline(infile, line);
     _emptyDistance = split(line, ' ');
+
+    //read distance from node to node for each waste type
     for (int type = 0; type < 5; type++)
     {
         vector<vector<int>> aux;
@@ -147,6 +150,7 @@ void readData()
         _distances.push_back(aux);
     }
 
+    //read risk from node to node for each waste type
     for (int type = 0; type < 5; type++)
     {
         vector<vector<int>> aux;
@@ -623,6 +627,23 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
     return std::find(begin, end, option) != end;
 }
 
+vector<vector<int>> hillClimbing(vector<vector<int>> solution, int iterations){
+    vector<vector<int>> bestSolution = solution;
+    vector<vector<int>> newSolution = solution;
+    
+    for(int i=0; i<=iterations; i++){
+        swapNodesFromRoute(newSolution);
+        tuple<int, int> bestScore = evaluateSolution(bestSolution);
+        tuple<int, int> newScore = evaluateSolution(newSolution);
+        if(get<0>(newScore)+get<1>(newScore) < get<0>(bestScore)+get<1>(bestScore)){
+            bestSolution = newSolution;
+        } else {
+            newSolution = bestSolution;
+        }
+    }
+    return bestSolution;
+}
+
 //main
 int main(int argc, char *argv[])
 {   
@@ -693,6 +714,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < populationSize; i++)
     {
         vector<vector<int>> solution = generateRandomSolution();
+        solution = hillClimbing(solution, hillClimbingIterations);
         tuple<int, int> score = evaluateSolution(solution);
         distanceScores.push_back(get<0>(score));
         riskScores.push_back(get<1>(score));
