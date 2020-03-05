@@ -15,12 +15,12 @@ using namespace std;
 ///////////////////////Configuration
 string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
-int generations = 1000;
+int generations = 1;
 int tournamentSize=20;
 int mutationChance=2;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
 int mutationTotal=2;
 int seed=123;
-int hillClimbingIterations=1000;
+int hillClimbingIterations=0;
 
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
@@ -644,6 +644,42 @@ vector<vector<int>> hillClimbing(vector<vector<int>> solution, int iterations){
     return bestSolution;
 }
 
+int calculateDistance(double x1, double y1, double x2, double y2) {
+    return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+}
+
+//Calculate crowding distance and order solutions by it
+vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceScores, vector<int> riskScores){
+    vector<int> crowdingDistances;
+    vector<int> orderedSolutions;
+    for (int i=0; i < solutions.size(); i++){
+        int crowdingDistance = 0;
+        for(int j=0; j<populationSize; j++){
+            crowdingDistance += calculateDistance(distanceScores[solutions[i]], riskScores[solutions[i]], distanceScores[j], riskScores[j]);
+        }
+        if(i==0){
+            crowdingDistances.push_back(crowdingDistance);
+            orderedSolutions.push_back(solutions[i]);          
+        } else {
+            int size = crowdingDistances.size();
+            bool inserted = false;
+            for(int k=0; k<size; k++) {
+                if(crowdingDistances[k]<crowdingDistance){
+                    crowdingDistances.insert(crowdingDistances.begin()+k,crowdingDistance);
+                    orderedSolutions.insert(orderedSolutions.begin()+k,solutions[i]);
+                    inserted = true;
+                    break; 
+                }
+            }
+            if(!inserted){
+                crowdingDistances.push_back(crowdingDistance);
+                orderedSolutions.push_back(solutions[i]);   
+            }
+        }
+    }
+    return orderedSolutions;
+}
+
 //main
 int main(int argc, char *argv[])
 {   
@@ -759,32 +795,7 @@ int main(int argc, char *argv[])
             }
             if (dominationCount[i] == 0)
             {
-                if(gen==generations-1){
-/*                     bool equalSolutions=true;
-                    for(int j=0;j<firstFront.size();j++){//for each solution on first front, check if the new solution is the same
-                        equalSolutions=true;
-                        for(int truck=0; truck<population[firstFront[j]].size();truck++){
-                            if(population[firstFront[j]][truck].size()!=population[i][truck].size()){//if routes have different length
-                                equalSolutions=false;
-                                break;
-                            }
-                            for(int route=0; route<population[firstFront[j]][truck].size();route++){
-                                if(population[firstFront[j]][truck][route]!=population[i][truck][route]){
-                                    equalSolutions=false;
-                                    break;
-                                }
-                            }
-                            if(!equalSolutions){
-                                break;
-                            }
-                        }
-                        if(equalSolutions){
-                            break;
-                        }
-                    }
-                    if(!equalSolutions || firstFront.size()==0){
-                        writeSolution(population[i]);
-                    } */                        
+                if(gen==generations-1){                       
                     writeSolution(population[i]);
                 }
                 firstFront.push_back(i);
@@ -802,6 +813,9 @@ int main(int argc, char *argv[])
             }
             //printVector(firstFront);
             //printVector(dominationCount);
+
+            // Order first front by crowding distance
+            firstFront = orderByCrowdingDistance(firstFront, distanceScores, riskScores);
 
             for (int i = 0; i < firstFront.size(); i++)
             {
@@ -853,7 +867,7 @@ int main(int argc, char *argv[])
                 secondBestSolution=randomSolution;
             }
 
-            for(int j=0;j<tournamentSize-1;j++){
+            for(int j=0;j<tournamentSize-3;j++){
                 randomSolution = randomSolutionDistribution(rng);
                 if(dominatedSolutions[randomSolution].size()>bestDominatedCount){
                     secondBestSolution=bestSolution;
