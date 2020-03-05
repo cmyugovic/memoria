@@ -15,12 +15,12 @@ using namespace std;
 ///////////////////////Configuration
 string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
-int generations = 1;
+int generations = 100;
 int tournamentSize=20;
 int mutationChance=2;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
 int mutationTotal=2;
 int seed=123;
-int hillClimbingIterations=0;
+int hillClimbingIterations=10;
 
 ///////////////////////Global variables
 int _nTrucks;                           //Number of trucks
@@ -856,23 +856,20 @@ int main(int argc, char *argv[])
         {
             int randomSolution = randomSolutionDistribution(rng);
             int bestSolution=randomSolution;
-            int bestDominatedCount=dominatedSolutions[randomSolution].size();
             int secondBestSolution;
             randomSolution = randomSolutionDistribution(rng);
-            if(dominatedSolutions[randomSolution].size()>bestDominatedCount){
+            if(randomSolution<bestSolution){
                 secondBestSolution=bestSolution;
                 bestSolution=randomSolution;
-                bestDominatedCount=dominatedSolutions[randomSolution].size();
             } else{
                 secondBestSolution=randomSolution;
             }
 
             for(int j=0;j<tournamentSize-3;j++){
                 randomSolution = randomSolutionDistribution(rng);
-                if(dominatedSolutions[randomSolution].size()>bestDominatedCount){
+                if(randomSolution<bestSolution){
                     secondBestSolution=bestSolution;
                     bestSolution=randomSolution;
-                    bestDominatedCount=dominatedSolutions[randomSolution].size();
                 } else{
                     secondBestSolution=randomSolution;
                 }
