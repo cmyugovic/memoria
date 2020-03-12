@@ -10,14 +10,12 @@
 
 using namespace std;
 
-
-
 ///////////////////////Configuration
 string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
 int generations = 100;
 int tournamentSize=20;
-int mutationChance=2;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
+int mutationChance=1;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
 int mutationTotal=2;
 int seed=123;
 int hillClimbingIterations=10;
@@ -540,6 +538,8 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
         availableCapacities.push_back(_capacities[truck]);
     }
 
+    //printVector(parent1[0]);
+
     for (int truck = 0; truck < _nTrucks; truck++)
     {
         while (true)
@@ -547,11 +547,15 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
             int newNode;
             if (turn) //Finds the node on the current parent that connects to the current child node
             {
-                newNode = findNodeConnection(*child[truck].end(), parent1);
+                newNode = findNodeConnection(child[truck].back(), parent1);
+                //cout << "\n" << child[truck].back() << "\n" << newNode << "\n";
+                //printVector(child[truck]);
             }
             else
             {
-                newNode = findNodeConnection(*child[truck].end(), parent2);
+                newNode = findNodeConnection(child[truck].back(), parent2);
+                //cout << "\n" << child[truck].back() << "\n" << newNode << "\n";
+                //printVector(child[truck]);
             }
             if ( //If node is already visited or the node is not valid, a random valid node is selected
                 !find(unvisitedNodes, newNode) ||
@@ -559,6 +563,7 @@ vector<vector<int>> AEX(vector<vector<int>> parent1, vector<vector<int>> parent2
                 availableCapacities[truck] < _productions[newNode])
             {
                 newNode = findRandomValidNode(unvisitedNodes, childRouteTypes[truck], availableCapacities[truck]);
+                
             }
             if (newNode == -1)
             { //no valid node found
@@ -687,9 +692,9 @@ int main(int argc, char *argv[])
     {
         filePath=getCmdOption(argv, argv+argc, "-fp");
     }
-    if(cmdOptionExists(argv, argv+argc, "-p"))
+    if(cmdOptionExists(argv, argv+argc, "-ps"))
     {
-        populationSize=stoi(getCmdOption(argv, argv+argc, "-p"));
+        populationSize=stoi(getCmdOption(argv, argv+argc, "-ps"));
     }
     if(cmdOptionExists(argv, argv+argc, "-g"))
     {
@@ -739,6 +744,10 @@ int main(int argc, char *argv[])
     {
         seed=stoi(getCmdOption(argv, argv+argc, "-seed"));
     }
+    if(cmdOptionExists(argv, argv+argc, "-hc"))
+    {
+        hillClimbingIterations=stoi(getCmdOption(argv, argv+argc, "-hc"));
+    }
     rng.seed(seed);
     readData();
     vector<vector<vector<int>>> population;
@@ -756,7 +765,6 @@ int main(int argc, char *argv[])
         riskScores.push_back(get<1>(score));
         population.push_back(solution);
     }
-
 
     for (int gen = 0; gen < generations; gen++)
     {
@@ -857,6 +865,7 @@ int main(int argc, char *argv[])
             int randomSolution = randomSolutionDistribution(rng);
             int bestSolution=randomSolution;
             int secondBestSolution;
+
             randomSolution = randomSolutionDistribution(rng);
             if(randomSolution<bestSolution){
                 secondBestSolution=bestSolution;
@@ -874,8 +883,8 @@ int main(int argc, char *argv[])
                     secondBestSolution=randomSolution;
                 }
             }
-
             vector<vector<int>> newSolution=AEX(population[bestSolution],population[secondBestSolution]);
+            //vector<vector<int>> newSolution=population[bestSolution];
             mutate(newSolution);
             bool repeatedSolution=false;
             for(int j=0; j<newPopulation.size();j++){
