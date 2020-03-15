@@ -756,11 +756,28 @@ int main(int argc, char *argv[])
     uniform_int_distribution<int> randomSolutionDistribution(0, populationSize/2 - 1);
 
     //Create initial population
+    cout << "Generating initial population \n";
+    int repeatedSolutions = 0;
     for (int i = 0; i < populationSize; i++)
     {
+        if(repeatedSolutions != 0 && repeatedSolutions%1000 == 0){
+            cout << repeatedSolutions << " repeated solutions. Population " << i << "/" << populationSize << ". consider setting a lower amount of HC iterations.\n";
+        } 
         vector<vector<int>> solution = generateRandomSolution();
         solution = hillClimbing(solution, hillClimbingIterations);
         tuple<int, int> score = evaluateSolution(solution);
+        bool repeatedSolution = false;
+        for(int j=0; j<population.size();j++){
+            if(checkEqualSolutions(solution, population[j])){
+                repeatedSolution=true;
+                break;
+            }
+        }
+        if(repeatedSolution){
+            i--;
+            repeatedSolutions++;
+            continue;
+        }
         distanceScores.push_back(get<0>(score));
         riskScores.push_back(get<1>(score));
         population.push_back(solution);
