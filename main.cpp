@@ -15,8 +15,7 @@ string filePath="instancias/peligro-mezcla4-min-riesgo-zona1-2k-AE.2.hazmat";
 int populationSize = 200;
 int generations = 100;
 int tournamentSize=20;
-int mutationChance=1;//chance of mutation is mutationChance/mutationTotal. 66% = 2/3
-int mutationTotal=2;
+double mutationChance=0.5;
 int seed=123;
 int hillClimbingIterations=10;
 
@@ -422,7 +421,7 @@ void changeNodeRoute(vector<vector<int>> &solution)
 //do a random mutation
 void mutate(vector<vector<int>> &solution)
 {
-    uniform_int_distribution<int> randomMutationDistribution(1, mutationTotal);
+    uniform_real_distribution<float> randomMutationDistribution(0, 1);
     int randomMutation = randomMutationDistribution(rng);
     if (randomMutation <= mutationChance)
     {
@@ -708,10 +707,6 @@ int main(int argc, char *argv[])
     {
         mutationChance=stoi(getCmdOption(argv, argv+argc, "-mc"));
     }    
-    if(cmdOptionExists(argv, argv+argc, "-mt"))
-    {
-        mutationTotal=stoi(getCmdOption(argv, argv+argc, "-mt"));
-    }
     if(cmdOptionExists(argv, argv+argc, "-s"))
     {
         seed=stoi(getCmdOption(argv, argv+argc, "-s"));
@@ -736,10 +731,6 @@ int main(int argc, char *argv[])
     {
         mutationChance=stoi(getCmdOption(argv, argv+argc, "-mutationChance"));
     }    
-    if(cmdOptionExists(argv, argv+argc, "-mutationTotal"))
-    {
-        mutationTotal=stoi(getCmdOption(argv, argv+argc, "-mutationTotal"));
-    }
     if(cmdOptionExists(argv, argv+argc, "-seed"))
     {
         seed=stoi(getCmdOption(argv, argv+argc, "-seed"));
@@ -903,6 +894,7 @@ int main(int argc, char *argv[])
             vector<vector<int>> newSolution=AEX(population[bestSolution],population[secondBestSolution]);
             //vector<vector<int>> newSolution=population[bestSolution];
             mutate(newSolution);
+            newSolution = hillClimbing(newSolution, hillClimbingIterations);
             bool repeatedSolution=false;
             for(int j=0; j<newPopulation.size();j++){
                 if(checkEqualSolutions(newSolution, newPopulation[j])){
