@@ -648,19 +648,51 @@ vector<vector<int>> hillClimbing(vector<vector<int>> solution, int iterations){
     return bestSolution;
 }
 
-int calculateDistance(double x1, double y1, double x2, double y2) {
-    return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+//Calculates perimeter of the cuboid between two points
+int calculateCrowdingDistance(double x1, double y1, double x2, double y2) {
+    return (abs(x2-x1)+abs(y2-y1))*2;
 }
 
-//Calculate crowding distance and order solutions by it
+//Calculate crowding distance and order a single front solutions by it
 vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceScores, vector<int> riskScores){
     vector<int> crowdingDistances;
     vector<int> orderedSolutions;
     for (int i=0; i < solutions.size(); i++){
-        int crowdingDistance = 0;
-        for(int j=0; j<populationSize; j++){
-            crowdingDistance += calculateDistance(distanceScores[solutions[i]], riskScores[solutions[i]], distanceScores[j], riskScores[j]);
+        // Coordinate x represents distance, coordinate y represents risk.
+        // Because all solutions are on the same front, the closest solutions on 
+        // all objectives are the same as the closest on a single objective.
+        int neighbour_1_x;
+        int neighbour_1_y;
+        int neighbour_2_x;
+        int neighbour_2_y;
+        int closest_score_top = 1000000000; // infinite
+        int closest_score_bottom = 0;
+        int solution_score = distanceScores[solutions[i]];
+        for(int j=0; j<solutions.size(); j++){
+            if(j==i) {
+                continue;
+            }
+            int current_score = distanceScores[solutions[j]];
+            if(current_score < closest_score_top && current_score >= solution_score) {
+                closest_score_top = current_score;
+                neighbour_1_x = distanceScores[solutions[j]];
+                neighbour_1_y = riskScores[solutions[j]];
+            }
+            if (current_score > closest_score_bottom && current_score <= solution_score) { 
+                closest_score_bottom = current_score;
+                neighbour_2_x = distanceScores[solutions[j]];
+                neighbour_2_y = riskScores[solutions[j]];
+            }
         }
+/*         if (closest_score_top == 1000000000) {
+            neighbour_1_x = distanceScores[solutions[i]];
+            neighbour_1_y = riskScores[solutions[i]]; 
+        }
+        if (closest_score_bottom == 0) {
+            neighbour_2_x = distanceScores[solutions[i]];
+            neighbour_2_y = riskScores[solutions[i]]; 
+        } */
+        int crowdingDistance = calculateCrowdingDistance(neighbour_1_x, neighbour_1_y, neighbour_2_x, neighbour_2_y);
         if(i==0){
             crowdingDistances.push_back(crowdingDistance);
             orderedSolutions.push_back(solutions[i]);          
@@ -668,7 +700,7 @@ vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceS
             int size = crowdingDistances.size();
             bool inserted = false;
             for(int k=0; k<size; k++) {
-                if(crowdingDistances[k]<crowdingDistance){
+                if(crowdingDistances[k]>crowdingDistance){
                     crowdingDistances.insert(crowdingDistances.begin()+k,crowdingDistance);
                     orderedSolutions.insert(orderedSolutions.begin()+k,solutions[i]);
                     inserted = true;
