@@ -684,14 +684,14 @@ vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceS
                 neighbour_2_y = riskScores[solutions[j]];
             }
         }
-/*         if (closest_score_top == 1000000000) {
+        if (closest_score_top == 1000000000) {
             neighbour_1_x = distanceScores[solutions[i]];
             neighbour_1_y = riskScores[solutions[i]]; 
         }
         if (closest_score_bottom == 0) {
             neighbour_2_x = distanceScores[solutions[i]];
             neighbour_2_y = riskScores[solutions[i]]; 
-        } */
+        }
         int crowdingDistance = calculateCrowdingDistance(neighbour_1_x, neighbour_1_y, neighbour_2_x, neighbour_2_y);
         if(i==0){
             crowdingDistances.push_back(crowdingDistance);
