@@ -673,12 +673,12 @@ vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceS
                 continue;
             }
             int current_score = distanceScores[solutions[j]];
-            if(current_score < closest_score_top && current_score >= solution_score) {
+            if(current_score <= closest_score_top && current_score >= solution_score) {
                 closest_score_top = current_score;
                 neighbour_1_x = distanceScores[solutions[j]];
                 neighbour_1_y = riskScores[solutions[j]];
             }
-            if (current_score > closest_score_bottom && current_score <= solution_score) { 
+            if (current_score >= closest_score_bottom && current_score <= solution_score) { 
                 closest_score_bottom = current_score;
                 neighbour_2_x = distanceScores[solutions[j]];
                 neighbour_2_y = riskScores[solutions[j]];
