@@ -385,8 +385,7 @@ void swapNodesFromRoute(vector<vector<int>> &solution)
 }
 
 //Change a node to another truck route
-//Currently bugged
-void changeNodeRoute(vector<vector<int>> &solution)
+/* void changeNodeRoute(vector<vector<int>> &solution)
 {
     uniform_int_distribution<int> randomTruckDistribution(0, solution.size() - 1);
     int randomTruck = randomTruckDistribution(rng);
@@ -399,22 +398,54 @@ void changeNodeRoute(vector<vector<int>> &solution)
         if (routeSize > 2)
         {
             int randomTruck2 = randomTruckDistribution(rng);
-            if (randomTruckIndex == randomTruck2)
-            {
-                randomTruck2 = (randomTruck2 + 1) % (solution.size());
-            }
             uniform_int_distribution<int> randomNodeDistribution(0, routeSize - 3);
             int randomNode = randomNodeDistribution(rng);
 
             int aux = solution[randomTruckIndex][randomNode + 1];
-            solution[randomTruckIndex].erase(solution[randomTruckIndex].begin() + randomNode + 1);
 
             uniform_int_distribution<int> randomNodeDistribution2(0, solution[randomTruck2].size() - 3);
             int randomNode2 = randomNodeDistribution2(rng);
-            //solution[randomTruck2].resize(200,aux);
-            //solution[randomTruck2].insert(solution[randomTruck2].begin()+randomNode2+1, aux);
+            solution[randomTruck2].insert(solution[randomTruck2].begin()+randomNode2+1, aux);
+
+            solution[randomTruckIndex].erase(solution[randomTruckIndex].begin() + randomNode + 1);
             return;
         }
+    }
+} */
+void changeNodeRoute(vector<vector<int>> &solution)
+{
+    uniform_int_distribution<int> randomTruckDistribution(0, solution.size() - 1);
+    while(true){
+        int fromTruck = randomTruckDistribution(rng);
+        int toTruck = randomTruckDistribution(rng);
+        if (solution[fromTruck].size() <= 2){
+            continue;
+        }
+        vector<bool> routeTypes{false, false, false, false, false};
+        int production = 0;
+        for (vector<int>::iterator it = solution[toTruck].begin(); it != solution[toTruck].end();)
+        {
+            int nodeType = _types[*it];
+            routeTypes[nodeType] = true;
+            production += _productions[*it];
+            it++;
+        }
+        uniform_int_distribution<int> randomNodeDistribution(1, solution[fromTruck].size() - 2);
+        uniform_int_distribution<int> randomPositionDistribution(1, solution[toTruck].size() - 1);
+        int randomNode = randomNodeDistribution(rng);
+        if (!checkValidWasteTypes(routeTypes, _types[solution[fromTruck][randomNode]]) ||  production + _productions[solution[fromTruck][randomNode]] > _capacities[toTruck])
+        {
+            continue;
+        }
+
+        int randomPosition = randomPositionDistribution(rng);
+        int aux = solution[fromTruck][randomNode];
+        solution[fromTruck].erase(solution[fromTruck].begin() + randomNode);
+        if(fromTruck == toTruck && randomNode < randomPosition){
+            randomPosition--;
+        }
+        solution[toTruck].insert(solution[toTruck].begin()+randomPosition, aux);
+        return;
     }
 }
 
@@ -422,14 +453,10 @@ void changeNodeRoute(vector<vector<int>> &solution)
 void mutate(vector<vector<int>> &solution)
 {
     uniform_real_distribution<float> randomMutationDistribution(0, 1);
-    int randomMutation = randomMutationDistribution(rng);
+    float randomMutation = randomMutationDistribution(rng);
     if (randomMutation <= mutationChance)
     {
         swapNodesFromRoute(solution);
-    }
-    else
-    {
-        //Do nothing
     }
 }
 
@@ -687,10 +714,14 @@ vector<int> orderByCrowdingDistance(vector<int> solutions, vector<int> distanceS
         if (closest_score_top == 1000000000) {
             neighbour_1_x = distanceScores[solutions[i]];
             neighbour_1_y = riskScores[solutions[i]]; 
+            neighbour_2_x *= 2;
+            neighbour_2_y *= 2;
         }
         if (closest_score_bottom == 0) {
             neighbour_2_x = distanceScores[solutions[i]];
             neighbour_2_y = riskScores[solutions[i]]; 
+            neighbour_1_x *= 2;
+            neighbour_1_y *= 2;
         }
         int crowdingDistance = calculateCrowdingDistance(neighbour_1_x, neighbour_1_y, neighbour_2_x, neighbour_2_y);
         if(i==0){
